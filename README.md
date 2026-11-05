@@ -1,26 +1,14 @@
 # Cove Liquid Glass Notes
 
-A compact technical note and a self-contained browser demo for a full-surface liquid-glass material built with CSS, Canvas 2D, WebGL and GLSL.
+A compact technical note for the full-surface liquid-glass material developed through the Cove Home iterations with CSS, Canvas 2D, WebGL and GLSL.
 
-This repository contains the public, stripped-down version of the optics work used in Cove Home. It does not contain the Home application, private assets, chat logic or personal data.
+This repository documents the optics work used in Cove Home. It does not publish a standalone imitation of the component, the Home application, private assets, chat logic or personal data.
 
 ## Read first
 
 - `docs/liquid-glass-technical-guide-v4.pdf` explains the render chain, equations, material recipes and lifecycle.
-- `demo/index.html` is a minimal implementation with clear and smoked glass.
-- `demo/liquid-glass.js` contains the shared WebGL renderer and shader.
-
-## Run the demo
-
-Serve the repository with any static server, then open `demo/`.
-
-```bash
-python3 -m http.server 8080
-```
-
-Then visit `http://localhost:8080/demo/`.
-
-The demo intentionally samples only the shared background source. Arbitrary DOM content and recursively stacked glass are outside its scope.
+- `CREDITS.md` records the upstream references and the later Cove-specific work.
+- `CHANGELOG.md` records the implementation decisions that survived the Home iterations.
 
 ## Rebuild the PDF
 
@@ -49,7 +37,7 @@ These values are tuning controls for this shader, not physical units.
 
 ## Public scope
 
-The repository is meant to share the engineering approach: one background coordinate system, rounded-rectangle SDF geometry, full-surface refraction, luminance-adaptive edges, clear/smoked material variants, one shared WebGL context and stable 2D snapshots.
+The repository shares the engineering approach and selected implementation fragments: one background coordinate system, rounded-rectangle SDF geometry, full-surface refraction, luminance-adaptive edges, clear/smoked material variants, one shared WebGL context and stable 2D snapshots. It is intentionally documentation, not a drop-in component.
 
 ## Credits and publication status
 
@@ -58,7 +46,7 @@ The project was developed after studying two upstream references:
 - [`VII-Cae/hyalite--liquid-glass`](https://github.com/VII-Cae/hyalite--liquid-glass), MIT licensed.
 - [`everett745/liquid-glass`](https://github.com/everett745/liquid-glass), with no explicit licence detected in the repository when reviewed on 2026-11-05.
 
-The exact lineage and the parts developed during later Cove Home iterations are recorded in `CREDITS.md`. The Hyalite MIT notice is bundled under `third_party/`. A code-level comparison was also made against Everett's published shader and WebGL implementation before this repository was opened; the public Cove demo does not copy those shader bodies, classes or component source.
+The exact lineage and the parts developed during later Cove Home iterations are recorded in `CREDITS.md`. The Hyalite MIT notice is bundled under `third_party/`. A code-level comparison was also made against Everett's published shader and WebGL implementation before this repository was opened; the documented Cove Home approach does not reproduce those shader bodies, classes or component source.
 
 This repository is public for reading, discussion and linking. No licence is currently granted for the Cove-authored code or documentation; all rights remain reserved unless a later release adds an explicit licence. Third-party material retains its own notices.
 

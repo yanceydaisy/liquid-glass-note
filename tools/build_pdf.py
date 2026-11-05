@@ -36,7 +36,7 @@ class Guide:
         self.c=canvas.Canvas(str(path),pagesize=(W,H),pageCompression=1)
         self.c.setTitle('Liquid Glass Technical Guide v4')
         self.c.setAuthor('@whereyanlands')
-        self.c.setSubject('A public implementation guide for the layered liquid-glass rendering system')
+        self.c.setSubject('A public technical guide to the layered liquid-glass rendering system')
         self.c.setKeywords('liquid glass, WebGL, SDF, refraction, Canvas, UI')
         self.page=0
     def begin(self,section):
@@ -119,7 +119,7 @@ g.c.setStrokeColor(HexColor('#EAF0F2'));g.c.roundRect(470,430,202,160,25,fill=0,
 g.c.setFillColor(NAVY);g.c.setFont('Mono',7);g.c.drawString(470,405,'same background · local coordinates')
 code=['const rect = card.getBoundingClientRect();','const scale = Math.max(vw / iw, vh / ih);','const dx = (vw - iw*scale)/2 - rect.left;','const dy = (vh - ih*scale)/2 - rect.top;','ctx.drawImage(image, dx, dy, iw*scale, ih*scale);','gl.texImage2D(..., backdrop);']
 g.code(M,350,W-2*M,code,'actual sampling',13,7.6)
-g.body('关键限制：普通文字、视频与叠在玻璃后的任意 DOM 不会自动进入纹理；多层玻璃也不是递归折射。公开 demo 使用同一张自托管背景来保证坐标一致。',M,114,W-2*M,9.5,16,MUTED)
+g.body('关键限制：普通文字、视频与叠在玻璃后的任意 DOM 不会自动进入纹理；多层玻璃也不是递归折射。Cove Home 使用统一的自托管背景源来保证坐标一致。',M,114,W-2*M,9.5,16,MUTED)
 g.end()
 
 # 3
@@ -224,7 +224,7 @@ for i,(a,b) in enumerate(budgets):
     x=M+i*126;g.c.setFont('Times-Roman',17);g.c.setFillColor(INK);g.c.drawString(x,188,b);g.c.setFont('Mono',6);g.c.setFillColor(MUTED);g.c.drawString(x,169,a)
 g.c.setStrokeColor(RULE);g.c.line(M,142,W-M,142)
 g.label('Public scope',M,119)
-g.body('公开仓库只提供光学思路、最小 demo 与技术册。真实 Home、私人背景、聊天逻辑和个人数据不在其中。',M,94,W-2*M,9.2,15,MUTED)
+g.body('公开仓库只提供光学思路、技术册与选取的实现片段，不发布独立组件。真实 Home、私人背景、聊天逻辑和个人数据不在其中。',M,94,W-2*M,9.2,15,MUTED)
 g.body('UPSTREAM: VII-Cae/hyalite--liquid-glass (MIT) · everett745/liquid-glass (NO LICENCE DECLARED)',M,57,W-2*M,6.8,11,MUTED,'Mono')
 g.body('PROJECT: github.com/yanceydaisy/liquid-glass-note',M,44,W-2*M,6.8,11,BLUE,'Mono')
 g.end();g.save()
