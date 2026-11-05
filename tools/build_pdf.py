@@ -1,231 +1,494 @@
 from pathlib import Path
-from reportlab.pdfgen import canvas
+import math
+import re
+
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
 from reportlab.lib.colors import HexColor, Color
-import math
 
-ROOT=Path(__file__).resolve().parents[1]
-OUT=ROOT/'docs/liquid-glass-technical-guide-v4.pdf'
-OUT.parent.mkdir(parents=True,exist_ok=True)
-W,H=720,960
-M=48
-PAPER=HexColor('#F3F4F2'); INK=HexColor('#15181C'); NAVY=HexColor('#173149')
-MUTED=HexColor('#737B83'); RULE=HexColor('#C9CDD0'); PALE=HexColor('#E8EBEC')
-BLUE=HexColor('#647F99'); ROSE=HexColor('#A9878C'); CODE=HexColor('#171B20')
-pdfmetrics.registerFont(TTFont('NotoSerifSC',str(ROOT/'assets/noto-serif-sc.ttf')))
-pdfmetrics.registerFont(TTFont('Mono','/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf'))
-pdfmetrics.registerFont(TTFont('Sans','/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
 
-def sw(text,font,size): return pdfmetrics.stringWidth(text,font,size)
-def lines(text,font,size,width):
-    out=[]
-    for paragraph in text.split('\n'):
-        if not paragraph: out.append(''); continue
-        cur=''
-        for ch in paragraph:
-            trial=cur+ch
-            if cur and sw(trial,font,size)>width:
-                out.append(cur);cur=ch
-            else:cur=trial
-        if cur:out.append(cur)
-    return out
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "docs" / "liquid-glass-technical-guide-v4.pdf"
+OUT.parent.mkdir(parents=True, exist_ok=True)
+
+W, H = 720, 960
+M = 48
+
+PAPER = HexColor("#F4F4F1")
+INK = HexColor("#171A1D")
+NAVY = HexColor("#183248")
+MUTED = HexColor("#697178")
+RULE = HexColor("#C8CDD0")
+PALE = HexColor("#E8EBEC")
+BLUE = HexColor("#718DA7")
+ROSE = HexColor("#A9848C")
+CODE = HexColor("#171B20")
+GREEN = HexColor("#738C82")
+
+pdfmetrics.registerFont(TTFont("NotoSerifSC", str(ROOT / "assets" / "noto-serif-sc.ttf")))
+
+
+def sw(text, font, size):
+    return pdfmetrics.stringWidth(text, font, size)
+
+
+def wrap(text, font, size, width):
+    result = []
+    for paragraph in text.split("\n"):
+        if not paragraph:
+            result.append("")
+            continue
+        units = re.findall(r"[A-Za-z0-9_./+*<>=()-]+|\s+|.", paragraph)
+        current = ""
+        for unit in units:
+            trial = current + unit
+            if current and sw(trial, font, size) > width:
+                if unit in "，。；：！？、）》”’":
+                    current += unit
+                    continue
+                result.append(current.rstrip())
+                current = unit.lstrip()
+            else:
+                current = trial
+        if current:
+            result.append(current.rstrip())
+    return result
+
 
 class Guide:
-    def __init__(self,path):
-        self.c=canvas.Canvas(str(path),pagesize=(W,H),pageCompression=1)
-        self.c.setTitle('Liquid Glass Technical Guide v4')
-        self.c.setAuthor('@whereyanlands')
-        self.c.setSubject('A public technical guide to the layered liquid-glass rendering system')
-        self.c.setKeywords('liquid glass, WebGL, SDF, refraction, Canvas, UI')
-        self.page=0
-    def begin(self,section):
-        self.page+=1;c=self.c;c.setFillColor(PAPER);c.rect(0,0,W,H,fill=1,stroke=0)
-        c.setStrokeColor(RULE);c.setLineWidth(.55);c.line(M,H-54,W-M,H-54)
-        c.setFont('Mono',7);c.setFillColor(HexColor('#9AA1A7'));c.drawString(M,H-38,f'{self.page:02d} / 07')
-        c.setFillColor(NAVY);c.drawRightString(W-M,H-38,'LIQUID GLASS / V4')
-        c.setFont('Mono',7);c.drawString(M,H-78,section.upper())
+    def __init__(self, path):
+        self.c = canvas.Canvas(str(path), pagesize=(W, H), pageCompression=1)
+        self.c.setTitle("Liquid Glass Technical Guide v4")
+        self.c.setAuthor("@whereyanlands")
+        self.c.setSubject("A public technical guide to a layered liquid-glass renderer")
+        self.c.setKeywords("liquid glass, WebGL, SDF, refraction, Canvas, UI")
+        self.page = 0
+
+    def begin(self, section):
+        self.page += 1
+        c = self.c
+        c.setFillColor(PAPER)
+        c.rect(0, 0, W, H, fill=1, stroke=0)
+        c.setStrokeColor(RULE)
+        c.setLineWidth(0.55)
+        c.line(M, H - 54, W - M, H - 54)
+        c.setFont("Courier", 7.5)
+        c.setFillColor(HexColor("#91999F"))
+        c.drawString(M, H - 38, f"{self.page:02d} / 07")
+        c.setFillColor(NAVY)
+        c.drawRightString(W - M, H - 38, "LIQUID GLASS / V4")
+        c.setFont("Courier-Bold", 7.5)
+        c.drawString(M, H - 79, section.upper())
+
     def end(self):
-        c=self.c;c.setStrokeColor(RULE);c.line(M,28,W-M,28)
-        c.setFont('Mono',6.5);c.setFillColor(HexColor('#98A0A6'));c.drawString(M,15,'TECHNICAL GUIDE · PUBLIC EDITION')
-        c.setFillColor(BLUE);c.drawCentredString(W/2,15,'@whereyanlands')
-        c.setFillColor(HexColor('#98A0A6'));c.drawRightString(W-M,15,f'{self.page:02d}')
+        c = self.c
+        c.setStrokeColor(RULE)
+        c.setLineWidth(0.5)
+        c.line(M, 28, W - M, 28)
+        c.setFont("Courier", 6.5)
+        c.setFillColor(HexColor("#929AA0"))
+        c.drawString(M, 15, "TECHNICAL GUIDE / PUBLIC EDITION")
+        c.setFillColor(BLUE)
+        c.drawCentredString(W / 2, 15, "@whereyanlands")
+        c.setFillColor(HexColor("#929AA0"))
+        c.drawRightString(W - M, 15, f"{self.page:02d}")
         c.showPage()
-    def title(self,text,y,size=36,width=None):
-        width=width or W-2*M;c=self.c;c.setFillColor(INK);c.setFont('NotoSerifSC',size)
-        for line in lines(text,'NotoSerifSC',size,width):
-            c.drawString(M,y,line);y-=size*1.22
+
+    def title(self, text, y, size=34, width=None):
+        width = width or W - 2 * M
+        self.c.setFillColor(INK)
+        self.c.setFont("NotoSerifSC", size)
+        for line in wrap(text, "NotoSerifSC", size, width):
+            self.c.drawString(M, y, line)
+            y -= size * 1.22
         return y
-    def body(self,text,x,y,width,size=11,leading=19,color=MUTED,font='NotoSerifSC'):
-        c=self.c;c.setFont(font,size);c.setFillColor(color)
-        for line in lines(text,font,size,width):c.drawString(x,y,line);y-=leading
+
+    def body(self, text, x, y, width, size=11.2, leading=19, color=MUTED, font="NotoSerifSC"):
+        self.c.setFont(font, size)
+        self.c.setFillColor(color)
+        for line in wrap(text, font, size, width):
+            self.c.drawString(x, y, line)
+            y -= leading
         return y
-    def label(self,text,x,y):
-        c=self.c;c.setFont('Mono',7);c.setFillColor(BLUE);c.drawString(x,y,text.upper())
-    def panel(self,x,y,w,h,fill=Color(1,1,1,.46),radius=18,stroke=RULE):
-        c=self.c;c.setFillColor(fill);c.setStrokeColor(stroke);c.setLineWidth(.65);c.roundRect(x,y,w,h,radius,fill=1,stroke=1)
-    def code(self,x,y,w,items,title=None,line_h=13,font_size=7.3):
-        h=30+len(items)*line_h+(10 if title else 0);c=self.c
-        c.setFillColor(CODE);c.roundRect(x,y-h,w,h,16,fill=1,stroke=0)
-        yy=y-18
-        if title:c.setFont('Mono',6.2);c.setFillColor(HexColor('#91A5B6'));c.drawString(x+18,yy,title.upper());yy-=18
-        for i,line in enumerate(items,1):
-            c.setFont('Mono',5.8);c.setFillColor(HexColor('#68737D'));c.drawString(x+16,yy,f'{i:02d}')
-            c.setFont('Mono',font_size);c.setFillColor(HexColor('#E4E8EA'));c.drawString(x+42,yy,line);yy-=line_h
-        return y-h
-    def save(self):self.c.save()
 
-g=Guide(OUT)
+    def label(self, text, x, y, color=BLUE):
+        self.c.setFont("Courier-Bold", 7.5)
+        self.c.setFillColor(color)
+        self.c.drawString(x, y, text.upper())
 
-# 1
-g.begin('Overview / 总览')
-y=g.title('液态玻璃，是一条光学渲染链。',840,40)
-y=g.body('它不等于给 div 加 blur。CSS 定义外壳，Canvas 重建局部背景，WebGL 重新计算折射与光，生命周期让玻璃在滚动、换肤和长聊天里保持正确。',M,y-12,620,12,21,HexColor('#626A71'))
-g.c.setStrokeColor(RULE);g.c.line(M,y-28,W-M,y-28)
-cols=[('01','SCENE','背景 / 主题 / 页面状态'),('02','SAMPLE','同一坐标系里的局部背景'),('03','OPTICS','纹理 / uniforms / 材质'),('04','UI','文字与交互独立叠加')]
-py=y-168;cw=145
-for i,(n,en,zh) in enumerate(cols):
-    x=M+i*(cw+15);g.panel(x,py,cw,112)
-    g.c.setFillColor(NAVY);g.c.setFont('Times-Roman',20);g.c.drawString(x+18,py+78,n)
-    g.c.setFont('Mono',7);g.c.drawString(x+18,py+52,en)
-    g.body(zh,x+18,py+31,cw-36,9,14,MUTED)
-g.label('Render chain',M,py-46)
-chain=[('SCENE','壁纸与页面底色'),('CROP','按组件位置采样'),('FIELD','圆角折射场'),('MATERIAL','透明 / 烟灰'),('SNAPSHOT','二维稳定输出')]
-cy=py-115
-for i,(a,b) in enumerate(chain):
-    x=M+i*126;g.c.setFillColor(NAVY if i in (0,2,4) else HexColor('#343A40'));g.c.circle(x+11,cy+14,9,fill=1,stroke=0)
-    if i<4:g.c.setStrokeColor(RULE);g.c.line(x+25,cy+14,x+113,cy+14)
-    g.c.setFont('Mono',7);g.c.setFillColor(INK);g.c.drawString(x,cy-13,a)
-    g.body(b,x,cy-31,105,8,12,MUTED)
-g.panel(M,86,W-2*M,94,Color(1,1,1,.5),16)
-g.label('一句话定点',M+20,151);g.body('玻璃先看见背景，再把它折射；文字始终留在上层。',M+20,122,W-2*M-40,16,24,INK)
+    def panel(self, x, y, w, h, fill=Color(1, 1, 1, 0.56), radius=16, stroke=RULE):
+        self.c.setFillColor(fill)
+        self.c.setStrokeColor(stroke)
+        self.c.setLineWidth(0.65)
+        self.c.roundRect(x, y, w, h, radius, fill=1, stroke=1)
+
+    def code(self, x, y, w, items, title=None, line_h=14, font_size=8.0):
+        h = 28 + len(items) * line_h + (13 if title else 0)
+        c = self.c
+        c.setFillColor(CODE)
+        c.roundRect(x, y - h, w, h, 15, fill=1, stroke=0)
+        yy = y - 18
+        if title:
+            c.setFont("Courier-Bold", 6.6)
+            c.setFillColor(HexColor("#8FA5B6"))
+            c.drawString(x + 18, yy, title.upper())
+            yy -= 18
+        for number, line in enumerate(items, 1):
+            c.setFont("Courier", 6.3)
+            c.setFillColor(HexColor("#66717B"))
+            c.drawString(x + 16, yy, f"{number:02d}")
+            c.setFont("Courier", font_size)
+            c.setFillColor(HexColor("#E4E8EA"))
+            c.drawString(x + 44, yy, line)
+            yy -= line_h
+        return y - h
+
+    def arrow(self, x1, y1, x2, y2, color=BLUE, width=1.3, head=7):
+        c = self.c
+        c.setStrokeColor(color)
+        c.setFillColor(color)
+        c.setLineWidth(width)
+        c.line(x1, y1, x2, y2)
+        angle = math.atan2(y2 - y1, x2 - x1)
+        left = (x2 - head * math.cos(angle - 0.55), y2 - head * math.sin(angle - 0.55))
+        right = (x2 - head * math.cos(angle + 0.55), y2 - head * math.sin(angle + 0.55))
+        path = c.beginPath()
+        path.moveTo(x2, y2)
+        path.lineTo(*left)
+        path.lineTo(*right)
+        path.close()
+        c.drawPath(path, fill=1, stroke=0)
+
+    def step(self, x, y, w, number, title, description, fill=Color(1, 1, 1, 0.62)):
+        self.panel(x, y, w, 82, fill, 14)
+        self.c.setFillColor(NAVY)
+        self.c.circle(x + 23, y + 58, 12, fill=1, stroke=0)
+        self.c.setFont("Courier-Bold", 8)
+        self.c.setFillColor(PAPER)
+        self.c.drawCentredString(x + 23, y + 55, str(number))
+        self.c.setFont("Courier-Bold", 8)
+        self.c.setFillColor(INK)
+        self.c.drawString(x + 44, y + 57, title.upper())
+        self.body(description, x + 16, y + 30, w - 32, 9.2, 14, MUTED)
+
+    def save(self):
+        self.c.save()
+
+
+def clip_round(c, x, y, w, h, radius):
+    path = c.beginPath()
+    path.roundRect(x, y, w, h, radius)
+    c.clipPath(path, stroke=0, fill=0)
+
+
+def scene_crop(c, x, y, w, h, crop=(0, 0, 1, 1), radius=18, smoked=False):
+    """Draw the same synthetic wallpaper through an arbitrary normalized crop."""
+    cx, cy, cw, ch = crop
+
+    def px(u):
+        return x + (u - cx) / cw * w
+
+    def py(v):
+        return y + (v - cy) / ch * h
+
+    c.saveState()
+    clip_round(c, x, y, w, h, radius)
+    c.setFillColor(HexColor("#DCE2E5"))
+    c.rect(x, y, w, h, fill=1, stroke=0)
+    c.setStrokeColor(Color(0.17, 0.25, 0.31, 0.16))
+    c.setLineWidth(0.55)
+    for i in range(11):
+        u = i / 10
+        c.line(px(u), py(0), px(u), py(1))
+        c.line(px(0), py(u), px(1), py(u))
+    c.setFillColor(Color(0.60, 0.40, 0.45, 0.78))
+    c.circle(px(0.22), py(0.72), w * 0.22 / cw, fill=1, stroke=0)
+    c.setFillColor(Color(0.34, 0.49, 0.66, 0.78))
+    c.circle(px(0.72), py(0.24), w * 0.27 / cw, fill=1, stroke=0)
+    c.setFillColor(Color(0.08, 0.13, 0.19, 0.90))
+    c.roundRect(px(0.58), py(0.48), w * 0.30 / cw, h * 0.38 / ch, 10, fill=1, stroke=0)
+    c.setStrokeColor(Color(1, 1, 1, 0.58))
+    c.setLineWidth(1.2)
+    c.line(px(0.05), py(0.12), px(0.92), py(0.88))
+    c.line(px(0.02), py(0.28), px(0.76), py(0.93))
+    if smoked:
+        c.setFillColor(Color(0.05, 0.06, 0.08, 0.42))
+        c.rect(x, y, w, h, fill=1, stroke=0)
+    c.restoreState()
+    c.setStrokeColor(HexColor("#AEB7BC"))
+    c.setLineWidth(0.7)
+    c.roundRect(x, y, w, h, radius, fill=0, stroke=1)
+
+
+def draw_glass_card(c, x, y, w, h, smoked=False, label=None):
+    scene_crop(c, x, y, w, h, crop=(0.26, 0.17, 0.55, 0.54), radius=23, smoked=smoked)
+    c.setStrokeColor(Color(1, 1, 1, 0.78 if not smoked else 0.50))
+    c.setLineWidth(1.25)
+    c.arc(x + 4, y + 3, x + w - 4, y + h - 3, 105, 72)
+    c.setStrokeColor(Color(0.10, 0.14, 0.18, 0.25))
+    c.arc(x + 5, y + 4, x + w - 5, y + h - 4, 285, 55)
+    if label:
+        c.setFont("Courier-Bold", 8)
+        c.setFillColor(HexColor("#F1F3F4") if smoked else NAVY)
+        c.drawString(x + 16, y + h - 24, label)
+
+
+g = Guide(OUT)
+
+# 1 / overview
+g.begin("Overview / 总览")
+y = g.title("液态玻璃，是一条可以顺着读懂的渲染链。", 835, 34)
+g.body("它由五步组成：先确定背景，再裁出组件所在区域，建立圆角光学场，计算折射与材质，最后把结果保存为稳定画面。文字和交互始终留在普通 DOM 上层。", M, y - 10, W - 2 * M, 11.5, 20)
+steps = [("SCENE", "壁纸、底色和主题蒙层"), ("CROP", "按卡片在视口中的位置裁取"), ("FIELD", "把圆角矩形变成统一坐标"), ("OPTICS", "折射、烟灰、暗边和高光"), ("SNAPSHOT", "复制到 2D Canvas，DOM 盖在上面")]
+start_y = 585
+for i, (name, desc) in enumerate(steps, 1):
+    yy = start_y - (i - 1) * 91
+    g.panel(M + 78, yy, W - 2 * M - 156, 66, Color(1, 1, 1, 0.64), 15)
+    g.c.setFillColor(NAVY if i in (1, 3, 5) else HexColor("#39434B"))
+    g.c.circle(M + 103, yy + 33, 15, fill=1, stroke=0)
+    g.c.setFont("Courier-Bold", 8)
+    g.c.setFillColor(PAPER)
+    g.c.drawCentredString(M + 103, yy + 30, f"{i:02d}")
+    g.c.setFont("Courier-Bold", 9)
+    g.c.setFillColor(INK)
+    g.c.drawString(M + 138, yy + 40, name)
+    g.body(desc, M + 138, yy + 20, W - 2 * M - 235, 9.6, 14, MUTED)
+    if i < len(steps):
+        g.arrow(W / 2, yy - 4, W / 2, yy - 21, RULE, 1.0, 5)
+g.panel(M, 82, W - 2 * M, 82, Color(1, 1, 1, 0.60), 16)
+g.label("READING RULE", M + 20, 138)
+g.body("从背景到快照是一条数据链；从 Canvas 到文字是一层合成关系。", M + 20, 109, W - 2 * M - 40, 13, 21, INK)
 g.end()
 
-# 2
-g.begin('01 / Background sampling')
-y=g.title('先对齐背景，玻璃才不会穿帮。',835,34)
-y=g.body('每个组件都从同一张全屏背景里，按自己在视口中的位置切出对应区域。我们重建壁纸、页面底色与主题蒙层；不会实时截图任意 DOM。',M,y-8,620,11,19)
-g.label('Same source · local crop',M,662)
-# sampling diagram
-g.c.setFillColor(HexColor('#1B2531'));g.c.roundRect(M,390,360,240,16,fill=1,stroke=0)
-g.c.setFillColor(Color(.67,.43,.48,.65));g.c.circle(M+80,555,120,fill=1,stroke=0)
-g.c.setFillColor(Color(.35,.52,.72,.58));g.c.circle(M+310,430,150,fill=1,stroke=0)
-g.c.setStrokeColor(HexColor('#ECF0F2'));g.c.setLineWidth(1.2);g.c.roundRect(M+190,458,118,92,22,fill=0,stroke=1)
-g.c.setFont('Mono',7);g.c.setFillColor(HexColor('#ECF0F2'));g.c.drawString(M+206,442,'card rect')
-g.c.setStrokeColor(BLUE);g.c.setLineWidth(1);g.c.line(420,510,456,510);g.c.line(449,516,456,510);g.c.line(449,504,456,510)
-g.c.setFillColor(HexColor('#263847'));g.c.roundRect(470,430,202,160,25,fill=1,stroke=0)
-g.c.setFillColor(Color(.35,.52,.72,.55));g.c.circle(630,430,110,fill=1,stroke=0)
-g.c.setStrokeColor(HexColor('#EAF0F2'));g.c.roundRect(470,430,202,160,25,fill=0,stroke=1)
-g.c.setFillColor(NAVY);g.c.setFont('Mono',7);g.c.drawString(470,405,'same background · local coordinates')
-code=['const rect = card.getBoundingClientRect();','const scale = Math.max(vw / iw, vh / ih);','const dx = (vw - iw*scale)/2 - rect.left;','const dy = (vh - ih*scale)/2 - rect.top;','ctx.drawImage(image, dx, dy, iw*scale, ih*scale);','gl.texImage2D(..., backdrop);']
-g.code(M,350,W-2*M,code,'actual sampling',13,7.6)
-g.body('关键限制：普通文字、视频与叠在玻璃后的任意 DOM 不会自动进入纹理；多层玻璃也不是递归折射。原始移动端界面使用统一的自托管背景源来保证坐标一致。',M,114,W-2*M,9.5,16,MUTED)
+# 2 / background sampling
+g.begin("01 / Background sampling")
+y = g.title("先找准卡片在背景里的位置。", 835, 35)
+g.body("同一张背景先铺满视口。每块玻璃读取自己的矩形位置，再从背景中裁出完全对应的那一块；这样折射后的纹理才不会错位。", M, y - 8, W - 2 * M, 11.5, 20)
+g.label("1. FULL VIEWPORT", M, 686)
+scene_crop(g.c, M, 420, 390, 238, radius=18)
+card_crop = (0.48, 0.34, 0.32, 0.30)
+rx = M + card_crop[0] * 390
+ry = 420 + card_crop[1] * 238
+rw = card_crop[2] * 390
+rh = card_crop[3] * 238
+g.c.setStrokeColor(HexColor("#F4F6F6"))
+g.c.setLineWidth(2.1)
+g.c.roundRect(rx, ry, rw, rh, 16, fill=0, stroke=1)
+g.c.setFillColor(Color(1, 1, 1, 0.90))
+g.c.roundRect(rx + 10, ry + rh - 28, 90, 20, 8, fill=1, stroke=0)
+g.c.setFont("Courier-Bold", 7)
+g.c.setFillColor(NAVY)
+g.c.drawString(rx + 20, ry + rh - 22, "CARD RECT")
+g.label("2. LOCAL TEXTURE", 500, 686)
+scene_crop(g.c, 500, 486, 172, 132, crop=card_crop, radius=19)
+g.arrow(452, 539, 489, 539, BLUE, 1.4, 8)
+g.body("同一位置\n同一纹理", 514, 455, 150, 10.2, 17, INK)
+g.step(M, 306, 194, 1, "MEASURE", "读取卡片的 rect：left、top、width、height。")
+g.step(M + 215, 306, 194, 2, "CROP", "按 cover 后的背景比例换算局部偏移。")
+g.step(M + 430, 306, 194, 3, "UPLOAD", "把局部 Canvas 上传为当前卡片纹理。")
+g.code(M, 280, W - 2 * M, ["const rect = card.getBoundingClientRect();", "const scale = Math.max(vw / iw, vh / ih);", "const dx = (vw - iw * scale) / 2 - rect.left;", "const dy = (vh - ih * scale) / 2 - rect.top;", "ctx.drawImage(image, dx, dy, iw * scale, ih * scale);"], "local crop from the controlled background source", 14, 7.8)
+g.body("边界：这里重建的是受控背景源（默认渐变或本地压缩后的壁纸 data URL）与主题蒙层。普通 DOM、视频和另一层玻璃不会自动进入纹理。", M, 86, W - 2 * M, 9.7, 16, MUTED)
 g.end()
 
-# 3
-g.begin('02 / Rounded geometry')
-y=g.title('形状不是裁出来的，光也要认识圆角。',835,34)
-y=g.body('CSS 的尺寸与圆角会作为 uniforms 传进 Shader。roundBox() 给出真实圆角矩形的有符号距离；radialBoundary() 则让任意长宽比都拥有从中心到边缘的统一光学坐标。',M,y-8,620,11,19)
-# two geometry panels
-for x,title in [(M,'SIGNED DISTANCE'),(374,'NORMALIZED FIELD')]:
-    g.panel(x,455,298,220)
-    g.label(title,x+18,646)
-g.c.setFillColor(HexColor('#D7E0E4'));g.c.roundRect(90,495,206,112,34,fill=1,stroke=0)
-for i in range(5):
-    g.c.setStrokeColor(Color(.10,.23,.32,.18+.11*i));g.c.setLineWidth(.6);g.c.roundRect(82-i*7,487-i*7,222+i*14,128+i*14,41+i*7,fill=0,stroke=1)
-g.c.setFillColor(NAVY);g.c.circle(193,551,3,fill=1,stroke=0);g.c.setFont('Mono',7);g.c.drawString(110,472,'sd < 0 inside · sd = 0 boundary')
-cx,cy=523,551
-g.c.setFillColor(HexColor('#DCE3E6'));g.c.roundRect(414,495,218,112,34,fill=1,stroke=0)
-for ang in [-2.6,-2,-1.25,-.55,0,.6,1.25,2,2.6]:
-    ex=cx+math.cos(ang)*104;ey=cy+math.sin(ang)*52;g.c.setStrokeColor(BLUE);g.c.line(cx,cy,ex,ey)
-g.c.setFillColor(NAVY);g.c.circle(cx,cy,4,fill=1,stroke=0);g.c.setFont('Mono',7);g.c.drawString(430,472,'p = relative / boundary(relative)')
-code1=['float roundBox(vec2 point) {','  vec2 q = abs(point-u_res*.5)','    -(u_res*.5-vec2(u_corner));','  return length(max(q,0.))','    +min(max(q.x,q.y),0.)-u_corner;','}']
-code2=['vec2 rel = px - u_res*.5;','vec2 p = rel / radialBoundary(rel);','float rr = clamp(length(p), 0., 1.);','','// center ≈ 0 · edge ≈ 1']
-g.code(M,416,298,code1,'rounded-rect sdf',12,6.7)
-g.code(374,416,298,code2,'field coordinates',12,6.7)
-g.panel(M,92,W-2*M,84,Color(1,1,1,.5),16);g.body('这一步解决了“宽卡片被当成拉长的圆形透镜”的问题。后面的折射、暗边和高光都共享同一组几何坐标。',M+20,142,W-2*M-40,11,19,INK)
+# 3 / geometry
+g.begin("02 / Rounded geometry")
+y = g.title("光学场必须知道真实圆角在哪里。", 835, 35)
+g.body("两个量解决两件事：roundBox() 判断像素离圆角边界有多远；radialBoundary() 把不同方向的边界都归一为 1。", M, y - 8, W - 2 * M, 11.5, 20)
+g.panel(M, 460, 298, 224, Color(1, 1, 1, 0.60), 17)
+g.label("A. SIGNED DISTANCE", M + 18, 650)
+g.c.setFillColor(HexColor("#D7E0E4"))
+g.c.roundRect(M + 54, 505, 190, 108, 31, fill=1, stroke=0)
+g.c.setStrokeColor(NAVY)
+g.c.setLineWidth(1.4)
+g.c.roundRect(M + 54, 505, 190, 108, 31, fill=0, stroke=1)
+for px, py, value, color in [(M + 148, 555, "-18  inside", GREEN), (M + 244, 559, "0  edge", NAVY), (M + 271, 625, "+24  outside", ROSE)]:
+    g.c.setFillColor(color)
+    g.c.circle(px, py, 4, fill=1, stroke=0)
+    g.c.setFont("Courier-Bold", 7.2)
+    g.c.drawString(px - 25, py - 18, value)
+g.body("负值在内部，0 是边界，正值在外部。它负责裁出真正的圆角轮廓。", M + 18, 484, 262, 9.4, 15, MUTED)
+g.panel(374, 460, 298, 224, Color(1, 1, 1, 0.60), 17)
+g.label("B. NORMALIZED FIELD", 392, 650)
+g.c.setFillColor(HexColor("#DCE3E6"))
+g.c.roundRect(408, 505, 230, 108, 31, fill=1, stroke=0)
+cx, cy = 523, 559
+for angle in (-2.55, -1.75, -0.95, -0.35, 0.35, 1.0, 1.8, 2.55):
+    ex = cx + math.cos(angle) * 108
+    ey = cy + math.sin(angle) * 50
+    g.c.setStrokeColor(Color(0.39, 0.52, 0.62, 0.72))
+    g.c.setLineWidth(0.8)
+    g.c.line(cx, cy, ex, ey)
+g.c.setFillColor(NAVY)
+for px, label in [(cx, "0"), (cx + 54, "0.5"), (cx + 108, "1.0")]:
+    g.c.circle(px, cy, 3.5, fill=1, stroke=0)
+    g.c.setFont("Courier-Bold", 7)
+    g.c.drawCentredString(px, cy - 18, label)
+g.body("无论射线撞到直边还是圆角，边界都变成 1；宽卡片不会被当成长圆镜片。", 392, 484, 262, 9.4, 15, MUTED)
+g.code(M, 420, 300, ["vec2 q = abs(point-u_res*.5)", "  -(u_res*.5-vec2(u_corner));", "float sd = length(max(q,0.))", "  + min(max(q.x,q.y),0.) - u_corner;"], "rounded rectangle SDF", 14, 7.4)
+g.code(372, 420, 300, ["vec2 rel = px - u_res * .5;", "vec2 p = rel / radialBoundary(rel);", "float rr = clamp(length(p), 0., 1.);", "// center = 0, exact boundary = 1"], "field coordinates", 14, 7.4)
+g.panel(M, 84, W - 2 * M, 76, Color(1, 1, 1, 0.62), 15)
+g.body("先用 SDF 得到形状，再用归一化场描述“离边缘还有多远”。后面的折射、暗边和高光都复用这两个结果。", M + 18, 126, W - 2 * M - 36, 10.6, 18, INK)
 g.end()
 
-# 4
-g.begin('03 / Refraction field')
-y=g.title('折射覆盖整块表面，而不是一圈边框。',835,34)
-y=g.body('径向透镜负责整体的厚度变化，低频双轴波动提供轻微流动。两者相加后转换成 UV 偏移，再从背景纹理的另一个位置取色。',M,y-8,620,11,19)
-g.label('Field composition',M,660)
-items=[('p','归一化位置'),('rr','中心到边缘'),('wave','双轴低频扰动'),('shift','透镜 + 波动'),('refrUv','重新采样背景')]
-for i,(a,b) in enumerate(items):
-    x=M+i*126;g.panel(x,536,112,90,Color(1,1,1,.45),14)
-    g.c.setFont('Mono',10);g.c.setFillColor(NAVY);g.c.drawString(x+13,590,a)
-    g.body(b,x+13,563,88,8,12,MUTED)
-    if i<4:g.c.setStrokeColor(BLUE);g.c.line(x+112,581,x+126,581)
-code=['float edgeGain = smoothstep(0.05, 0.97, rr);','float strength = (0.052 + 0.12*edgeGain)','  * u_refract * u_lDistort;','vec2 wave = vec2(','  sin(p.y*3.1+p.x*1.4+u_time*.18)*cos(p.x*2.2),','  cos(p.x*3.4-p.y*1.3-u_time*.15)*sin(p.y*2.1+.8)',');','vec2 shift = p*lensShift + wave*strength;','vec2 refrUv = v_uv + vec2(shift.x/u_res.x,','                              -shift.y/u_res.y);','vec3 refr = texture2D(u_bg, clamp(refrUv,.001,.999)).rgb;']
-g.code(M,500,W-2*M,code,'continuous interior lens',13,7.0)
-g.label('Tuning baseline',M,250)
-vals=[('refract','26'),('tint','0'),('blur','0'),('edge','25'),('shine','13'),('wobble','15')]
-for i,(a,b) in enumerate(vals):
-    x=M+i*104;g.c.setFillColor(NAVY if i in (0,3) else HexColor('#353B40'));g.c.circle(x+10,205,10,fill=1,stroke=0)
-    g.c.setFont('Times-Roman',16);g.c.setFillColor(INK);g.c.drawString(x,173,b);g.c.setFont('Mono',6.5);g.c.setFillColor(MUTED);g.c.drawString(x,155,a)
-g.body('参数是这套 Shader 的调节刻度，并非物理单位。位移太强会像水波，过度集中在边缘则会重新退化成“玻璃边框”。',M,112,W-2*M,9.5,16,MUTED)
+# 4 / refraction
+g.begin("03 / Refraction field")
+y = g.title("折射，本质上是换一个位置读取背景。", 835, 35)
+g.body("每个像素先得到归一化位置 p，再由整体透镜和低频波动计算位移 shift。最终不是给像素涂颜色，而是去背景纹理的邻近位置重新取色。", M, y - 8, W - 2 * M, 11.5, 20)
+g.label("BEFORE", M, 680)
+scene_crop(g.c, M, 500, 260, 150, crop=(0.18, 0.18, 0.64, 0.58), radius=20)
+g.label("AFTER / REFRACTED", 412, 680)
+scene_crop(g.c, 412, 500, 260, 150, crop=(0.205, 0.16, 0.60, 0.61), radius=20)
+g.c.setStrokeColor(Color(1, 1, 1, 0.82))
+g.c.setLineWidth(1.2)
+g.c.arc(417, 505, 667, 645, 105, 72)
+g.arrow(322, 575, 390, 575, BLUE, 1.6, 9)
+g.c.setFont("Courier-Bold", 8)
+g.c.setFillColor(NAVY)
+g.c.drawCentredString(356, 590, "SHIFT UV")
+flow = [("p", "归一化位置"), ("rr", "中心到边缘"), ("sh + wave", "透镜与波动"), ("refrUv", "新的采样坐标")]
+for i, (name, desc) in enumerate(flow):
+    x = M + i * 158
+    g.panel(x, 390, 139, 72, Color(1, 1, 1, 0.64), 13)
+    g.c.setFont("Courier-Bold", 9)
+    g.c.setFillColor(NAVY)
+    g.c.drawString(x + 14, 438, name)
+    g.body(desc, x + 14, 414, 111, 8.8, 13, MUTED)
+    if i < len(flow) - 1:
+        g.arrow(x + 139, 426, x + 153, 426, RULE, 1.0, 5)
+g.code(M, 356, W - 2 * M, ["float edgeGain = smoothstep(0.05, 0.97, rr);", "float strength = (0.052 + 0.12 * edgeGain)", "  * u_refract * u_lDistort;", "vec2 shift = p * sh + interiorWave * strength;", "vec2 refrUv = v_uv + vec2(shift.x/u_res.x, -shift.y/u_res.y);", "vec3 refr = backdrop(refrUv, u_blur * u_lBlur);"], "condensed from the production shader", 14, 7.55)
+g.label("CURRENT TUNING", M, 210)
+values = [("REFRACT", "26"), ("TINT", "0"), ("BLUR", "0"), ("EDGE", "25"), ("SHINE", "13"), ("WOBBLE", "15")]
+for i, (name, value) in enumerate(values):
+    x = M + i * 104
+    g.c.setFillColor(NAVY if name in ("REFRACT", "EDGE") else HexColor("#3C444A"))
+    g.c.circle(x + 8, 170, 7, fill=1, stroke=0)
+    g.c.setFont("Courier-Bold", 13)
+    g.c.setFillColor(INK)
+    g.c.drawString(x, 143, value)
+    g.c.setFont("Courier", 6.6)
+    g.c.setFillColor(MUTED)
+    g.c.drawString(x, 126, name)
+g.body("这些是 Shader 调节刻度，不是物理单位。", M, 87, W - 2 * M, 9.6, 16, MUTED)
 g.end()
 
-# 5
-g.begin('04 / Material & light')
-y=g.title('同一套光学，两种透射性格。',835,36)
-y=g.body('透明与烟灰材质共用 Shader。区别来自透射衰减、内侧吸光、清透折射带，以及随背景亮度变化的边缘配方。',M,y-8,620,11,19)
-# material cards
-for x,name,fill in [(M,'CLEAR',Color(.82,.88,.94,.42)),(374,'SMOKED',Color(.17,.20,.24,.82))]:
-    g.c.setFillColor(HexColor('#BAC7D2'));g.c.roundRect(x,515,298,150,34,fill=1,stroke=0)
-    g.c.setFillColor(fill);g.c.roundRect(x+18,535,262,110,28,fill=1,stroke=0)
-    g.c.setStrokeColor(Color(1,1,1,.7));g.c.arc(x+18,535,x+280,645,110,52)
-    g.c.setFont('Mono',8);g.c.setFillColor(HexColor('#F0F2F3') if name=='SMOKED' else NAVY);g.c.drawString(x+34,610,name)
-    g.body('保留背景细节' if name=='CLEAR' else '衰减透射 + 内侧暗部',x+34,579,225,10,16,HexColor('#F0F2F3') if name=='SMOKED' else INK)
-g.label('Luminance adaptation',M,478)
-g.body('lum = dot(color, vec3(0.2126, 0.7152, 0.0722))',M,451,620,10,16,NAVY,'Mono')
-g.body('亮场：暗边更窄、更轻，均匀白环被抑制。  深场：保留更多吸光厚度与局部高光。',M,425,620,10,17,MUTED)
-code=['float bright = smoothstep(0.42, 0.84, lum);','float smokeWidth = mix(7.2, 4.25, bright);','float edgeLoss  = mix(0.27, 0.085, bright);','','float hairline  = exp(-pow((sd + .46)/.43, 2.));','float upperLeft = exp(-pow((ang + 2.38)/.60, 2.));','float lowerRight= exp(-pow((ang - .76)/.62, 2.));','float glint = hairline*(upperLeft*.66 + lowerRight*.48);']
-g.code(M,390,W-2*M,code,'adaptive smoke + directional glint',13,7.2)
-g.panel(M,92,W-2*M,70,Color(1,1,1,.5),15);g.body('方向性高光比整圈白描边更重要。浅色背景尤其需要收掉全周 Fresnel，否则玻璃会变成发亮的塑料按钮。',M+18,133,W-2*M-36,10.5,18,INK)
+# 5 / material and light
+g.begin("04 / Material and light")
+y = g.title("光学相同，透射方式可以完全不同。", 835, 35)
+g.body("透明与烟灰材质共用同一套折射坐标。区别在于背景透过多少、边缘吸收多少光，以及亮背景下要不要压低整圈白边。", M, y - 8, W - 2 * M, 11.5, 20)
+g.label("CLEAR", M, 688)
+draw_glass_card(g.c, M, 508, 286, 146, smoked=False, label="CLEAR")
+g.body("高透射\n轻微色调\n方向性高光", M + 18, 480, 250, 9.6, 15, INK)
+g.label("SMOKED", 386, 688)
+draw_glass_card(g.c, 386, 508, 286, 146, smoked=True, label="SMOKED")
+g.body("降低透射\n内侧吸光\n保留清透折射带", 404, 480, 250, 9.6, 15, INK)
+g.label("LUMINANCE ADAPTATION", M, 418)
+g.panel(M, 290, W - 2 * M, 104, Color(1, 1, 1, 0.62), 15)
+g.c.setFillColor(HexColor("#ECEDE9"))
+g.c.roundRect(M + 18, 312, 254, 58, 16, fill=1, stroke=0)
+g.c.setFillColor(HexColor("#252A30"))
+g.c.roundRect(400, 312, 254, 58, 16, fill=1, stroke=0)
+g.c.setFont("Courier-Bold", 8)
+g.c.setFillColor(NAVY)
+g.c.drawString(M + 34, 348, "BRIGHT BACKDROP")
+g.c.setFillColor(HexColor("#EEF1F2"))
+g.c.drawString(416, 348, "DARK BACKDROP")
+g.body("暗边更窄，均匀白环被压低", M + 34, 326, 220, 9.2, 14, INK)
+g.body("保留更多吸光厚度与局部高光", 416, 326, 220, 9.2, 14, HexColor("#EEF1F2"))
+g.code(M, 270, W - 2 * M, ["float lum = dot(color, vec3(0.2126, 0.7152, 0.0722));", "float bright = smoothstep(0.42, 0.84, lum);", "float smokeWidth = mix(7.2, 4.25, bright);", "float edgeLoss = mix(0.27, 0.085, bright);", "float hairline = exp(-pow((signedBorder + .46) / .43, 2.));"], "adaptive smoke and directional rim", 14, 7.45)
+g.panel(M, 82, W - 2 * M, 68, Color(1, 1, 1, 0.62), 15)
+g.body("判断依据是实际采样到的背景亮度，不是日间/夜间标签。这样同一张壁纸里的亮区和暗区也能分别得到合适边缘。", M + 18, 121, W - 2 * M - 36, 10.2, 17, INK)
 g.end()
 
-# 6
-g.begin('05 / Shared renderer')
-y=g.title('一套 WebGL，许多稳定的玻璃快照。',835,34)
-y=g.body('长聊天不能为每个气泡申请一个 WebGL 上下文。当前版本由整页共享 program 与 buffer；每个组件只保存自己的背景纹理和二维输出 Canvas。',M,y-8,620,11,19)
-g.label('Shared GPU · independent outputs',M,654)
-# renderer diagram
-g.panel(M,442,160,170,Color(.09,.11,.14,1),22,HexColor('#30363C'))
-g.c.setFont('Mono',8);g.c.setFillColor(HexColor('#E8ECEE'));g.c.drawString(M+20,574,'WEBGL SURFACE')
-g.body('program\nbuffer\nshader',M+20,540,120,10,20,HexColor('#BFC8CE'),'Mono')
-g.c.setStrokeColor(BLUE);g.c.setLineWidth(1.2)
-for yy in (568,523,478):g.c.line(208,yy,270,yy);g.c.line(263,yy+5,270,yy);g.c.line(263,yy-5,270,yy)
-for i,(name,y0) in enumerate([('CARD A',532),('CHAT B',487),('DOCK C',442)]):
-    g.panel(282,y0,390,34,Color(1,1,1,.5),10);g.c.setFont('Mono',7);g.c.setFillColor(NAVY);g.c.drawString(296,y0+13,name)
-    g.c.setFillColor(HexColor('#738B9D'));g.c.rect(382,y0+8,88,18,fill=1,stroke=0);g.c.setFillColor(HexColor('#D6DDE1'));g.c.rect(485,y0+8,165,18,fill=1,stroke=0)
-g.c.setFont('Mono',6.5);g.c.setFillColor(MUTED);g.c.drawString(382,420,'texture');g.c.drawString(485,420,'stable 2D snapshot')
-code=['gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);','','// Copy before the shared drawing buffer is discarded.','output.clearRect(0, 0, width, height);','output.drawImage(renderSurface, 0, 0);','','// Text remains normal DOM above the canvas.']
-g.code(M,382,W-2*M,code,'render then snapshot',13,7.3)
-g.label('Why it matters',M,212)
-g.body('屏幕外的气泡可以释放 GPU 纹理，却保留已经渲染好的二维画面；WebGL context 暂时丢失时，旧内容也不会全部变空。',M,183,620,11,19,INK)
-g.body('这是 v4 相比旧方案最关键的工程变化：从“每块玻璃一个上下文”，转为“一个渲染器，多份稳定输出”。',M,120,620,9.5,16,MUTED)
+# 6 / shared renderer
+g.begin("05 / Shared renderer")
+y = g.title("一个 WebGL 渲染器，许多独立快照。", 835, 35)
+g.body("玻璃引擎只创建一个 WebGL context。可见组件依次借用这块共享表面完成绘制，然后立即把像素复制到自己的 2D Canvas。", M, y - 8, W - 2 * M, 11.5, 20)
+g.label("ONE SHARED GPU SURFACE", M, 690)
+g.panel(M, 455, 188, 205, Color(0.08, 0.10, 0.13, 1), 20, HexColor("#30363C"))
+g.c.setFont("Courier-Bold", 9)
+g.c.setFillColor(HexColor("#E8ECEE"))
+g.c.drawString(M + 20, 620, "WEBGL")
+g.c.setFont("Courier", 8)
+g.c.setFillColor(HexColor("#BFC8CE"))
+for i, item in enumerate(("1 context", "1 program", "1 buffer", "1 drawing surface")):
+    g.c.drawString(M + 20, 585 - i * 30, item)
+rows = [("CARD A", 594), ("CHAT B", 525), ("DOCK C", 456)]
+for index, (name, yy) in enumerate(rows, 1):
+    g.arrow(245, yy + 20, 288, yy + 20, BLUE, 1.3, 7)
+    g.panel(298, yy - 5, 374, 50, Color(1, 1, 1, 0.64), 12)
+    g.c.setFillColor(NAVY)
+    g.c.circle(320, yy + 20, 10, fill=1, stroke=0)
+    g.c.setFont("Courier-Bold", 7)
+    g.c.setFillColor(PAPER)
+    g.c.drawCentredString(320, yy + 17, str(index))
+    g.c.setFont("Courier-Bold", 8)
+    g.c.setFillColor(INK)
+    g.c.drawString(342, yy + 25, name)
+    g.c.setFont("Courier", 7)
+    g.c.setFillColor(MUTED)
+    g.c.drawString(342, yy + 8, "texture + backdrop canvas + stable output canvas")
+g.code(M, 414, W - 2 * M, ["gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);", "// Copy before the shared drawing buffer is discarded.", "output.clearRect(0, 0, width, height);", "output.drawImage(renderSurface, 0, 0);", "// Normal DOM text remains above the output canvas."], "render once, keep a component-owned snapshot", 14, 7.7)
+g.label("WHEN A CARD LEAVES THE VIEWPORT", M, 250)
+g.panel(M, 135, W - 2 * M, 91, Color(1, 1, 1, 0.62), 15)
+g.c.setFont("Courier-Bold", 8)
+g.c.setFillColor(ROSE)
+g.c.drawString(M + 20, 194, "GPU TEXTURE")
+g.c.setFont("NotoSerifSC", 10.2)
+g.c.setFillColor(INK)
+g.c.drawString(M + 20, 169, "释放")
+g.arrow(M + 155, 181, M + 250, 181, RULE, 1.2, 6)
+g.c.setFont("Courier-Bold", 8)
+g.c.setFillColor(GREEN)
+g.c.drawString(M + 278, 194, "2D SNAPSHOT")
+g.c.setFont("NotoSerifSC", 10.2)
+g.c.setFillColor(INK)
+g.c.drawString(M + 278, 169, "继续显示；context 丢失时旧画面仍在")
+g.body("这里的“1 个 context”只指液态玻璃引擎。", M, 92, W - 2 * M, 9.6, 16, MUTED)
 g.end()
 
-# 7
-g.begin('06 / Lifecycle & reuse')
-y=g.title('玻璃一直活着，但只在必要时工作。',835,34)
-y=g.body('背景更新与材质动画分开。滚动、尺寸、主题和壁纸变化只标记 dirty；可见组件按上限频率绘制，离屏后释放纹理并保留二维快照。',M,y-8,620,11,19)
-g.label('Lifecycle',M,666)
-events=[('RESIZE','重读尺寸与圆角'),('SCROLL','重算局部采样位置'),('THEME / BG','重建背景纹理'),('OFFSCREEN','暂停并释放 texture'),('DISPOSE','清理 observer 与资源')]
-for i,(a,b) in enumerate(events):
-    yy=626-i*55;g.c.setFillColor(NAVY if i in (0,3) else HexColor('#3C4248'));g.c.circle(M+10,yy+6,8,fill=1,stroke=0)
-    g.c.setFont('Mono',7);g.c.setFillColor(INK);g.c.drawString(M+32,yy+3,a);g.body(b,M+148,yy+3,430,9.5,15,MUTED)
-g.code(M,340,W-2*M,['if (!visible || document.hidden) return;','if (!reduced && ms-last < 48) return;','last = ms;','','if (dirty) redrawTexture();','draw(reduced ? 0 : ms * 0.001);'],'frame budget',13,7.5)
-g.label('Current budgets',M,226)
-budgets=[('DPR','≤ 1.5'),('VISIBLE FPS','≈ 20'),('WEBGL CONTEXT','1'),('HERO BLUR','2.25 px'),('FALLBACK','CSS blur')]
-for i,(a,b) in enumerate(budgets):
-    x=M+i*126;g.c.setFont('Times-Roman',17);g.c.setFillColor(INK);g.c.drawString(x,188,b);g.c.setFont('Mono',6);g.c.setFillColor(MUTED);g.c.drawString(x,169,a)
-g.c.setStrokeColor(RULE);g.c.line(M,142,W-M,142)
-g.label('Public scope',M,119)
-g.body('公开仓库只提供光学思路、技术册与选取的实现片段，不发布独立组件。真实 Home、私人背景、聊天逻辑和个人数据不在其中。',M,94,W-2*M,9.2,15,MUTED)
-g.body('UPSTREAM: VII-Cae/hyalite--liquid-glass (MIT) · everett745/liquid-glass (NO LICENCE DECLARED)',M,57,W-2*M,6.8,11,MUTED,'Mono')
-g.body('PROJECT: github.com/yanceydaisy/liquid-glass-note',M,44,W-2*M,6.8,11,BLUE,'Mono')
-g.end();g.save()
+# 7 / lifecycle
+g.begin("06 / Lifecycle and reuse")
+y = g.title("动画一直存在，昂贵工作只在必要时发生。", 835, 34)
+g.body("背景纹理更新和材质动画分开管理。滚动、尺寸、主题或壁纸变化只把组件标为 dirty；可见组件按帧率上限绘制，离屏后保留快照并释放 GPU 纹理。", M, y - 8, W - 2 * M, 11.3, 20)
+g.label("STATE FLOW", M, 680)
+states = [("DIRTY", "背景或尺寸变化", ROSE), ("VISIBLE", "约 20 fps 绘制", NAVY), ("OFFSCREEN", "暂停并释放纹理", BLUE), ("DISPOSE", "断开 observer", HexColor("#454B50"))]
+xs = [M, 208, 368, 528]
+for i, ((name, desc, color), x) in enumerate(zip(states, xs)):
+    g.panel(x, 548, 134, 92, Color(1, 1, 1, 0.64), 14)
+    g.c.setFillColor(color)
+    g.c.circle(x + 20, 614, 8, fill=1, stroke=0)
+    g.c.setFont("Courier-Bold", 8)
+    g.c.setFillColor(INK)
+    g.c.drawString(x + 36, 611, name)
+    g.body(desc, x + 14, 579, 106, 8.9, 14, MUTED)
+    if i < 3:
+        g.arrow(x + 134, 594, xs[i + 1] - 8, 594, RULE, 1.0, 5)
+g.c.setFont("Courier", 6.7)
+g.c.setFillColor(MUTED)
+g.c.drawString(M + 10, 525, "theme / wallpaper / resize / scroll")
+g.arrow(M + 214, 530, M + 214, 548, ROSE, 1.0, 5)
+g.c.drawString(389, 525, "IntersectionObserver")
+g.arrow(454, 530, 454, 548, BLUE, 1.0, 5)
+g.code(M, 488, W - 2 * M, ["if (disposed || !visible || document.hidden || w < 5) return;", "if (reduced) { if (dirty || generationChanged) draw(0); return; }", "if (ms - last < 48) return;        // max about 20 fps", "last = ms;", "draw(ms * 0.001);                  // redraws texture only if dirty"], "actual frame policy, condensed", 14, 7.45)
+g.label("CURRENT BUDGETS", M, 285)
+budgets = [("DPR", "<= 1.5"), ("VISIBLE FPS", "~ 20"), ("GL CONTEXT", "1 engine"), ("HERO BLUR", "2.25 px"), ("FALLBACK", "CSS blur")]
+for i, (name, value) in enumerate(budgets):
+    x = M + i * 126
+    g.panel(x, 205, 112, 58, Color(1, 1, 1, 0.58), 12)
+    g.c.setFont("Courier-Bold", 10)
+    g.c.setFillColor(INK)
+    g.c.drawString(x + 12, 238, value)
+    g.c.setFont("Courier", 6.3)
+    g.c.setFillColor(MUTED)
+    g.c.drawString(x + 12, 220, name)
+g.c.setStrokeColor(RULE)
+g.c.line(M, 177, W - M, 177)
+g.label("PUBLIC SCOPE", M, 151)
+g.body("公开内容只包含光学思路、技术图与经过压缩的实现片段。真实应用、私人背景、聊天逻辑和个人数据不在其中。", M, 126, W - 2 * M, 9.5, 16, MUTED)
+g.body("UPSTREAM: VII-Cae/hyalite--liquid-glass (MIT) / everett745/liquid-glass (NO LICENCE DECLARED)", M, 70, W - 2 * M, 6.8, 11, MUTED, "Courier")
+g.body("PROJECT: github.com/yanceydaisy/liquid-glass-note", M, 55, W - 2 * M, 6.8, 11, BLUE, "Courier")
+g.end()
+
+g.save()
 print(OUT)
