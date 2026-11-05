@@ -222,16 +222,64 @@ def scene_crop(c, x, y, w, h, crop=(0, 0, 1, 1), radius=18, smoked=False):
 
 
 def draw_glass_card(c, x, y, w, h, smoked=False, label=None):
-    scene_crop(c, x, y, w, h, crop=(0.26, 0.17, 0.55, 0.54), radius=23, smoked=smoked)
-    c.setStrokeColor(Color(1, 1, 1, 0.78 if not smoked else 0.50))
-    c.setLineWidth(1.25)
-    c.arc(x + 4, y + 3, x + w - 4, y + h - 3, 105, 72)
-    c.setStrokeColor(Color(0.10, 0.14, 0.18, 0.25))
-    c.arc(x + 5, y + 4, x + w - 5, y + h - 4, 285, 55)
+    # Both materials start from the exact same crop. The smoked variant adds
+    # separate body attenuation, an inward dark bevel, and a narrow clear rim.
+    scene_crop(c, x, y, w, h, crop=(0.26, 0.17, 0.55, 0.54), radius=23, smoked=False)
+    c.saveState()
+    clip_round(c, x, y, w, h, 23)
+    if smoked:
+        c.setFillColor(Color(0.035, 0.045, 0.060, 0.38))
+        c.rect(x, y, w, h, fill=1, stroke=0)
+        # The production shader's smokeOuter / edgeLoss are represented here
+        # as a broad bevel that fades toward the card interior.
+        for i in range(12):
+            inset = 2.5 + i * 1.15
+            alpha = 0.115 * (1 - i / 12) ** 1.35
+            c.setStrokeColor(Color(0.025, 0.032, 0.043, alpha))
+            c.setLineWidth(2.6)
+            c.roundRect(x + inset, y + inset, w - inset * 2, h - inset * 2,
+                        max(7, 23 - inset), fill=0, stroke=1)
+        # A narrow refractive band survives at the edge instead of becoming a
+        # uniform white outline.
+        c.setStrokeColor(Color(0.78, 0.87, 0.94, 0.55))
+        c.setLineWidth(4.6)
+        c.arc(x + 3, y + 3, x + w - 3, y + h - 3, 112, 52)
+        c.arc(x + 3, y + 3, x + w - 3, y + h - 3, 292, 34)
+        c.setStrokeColor(Color(1, 1, 1, 0.62))
+        c.setLineWidth(1.0)
+        c.arc(x + 5, y + 5, x + w - 5, y + h - 5, 116, 42)
+    else:
+        c.setFillColor(Color(0.86, 0.91, 0.96, 0.055))
+        c.rect(x, y, w, h, fill=1, stroke=0)
+        c.setStrokeColor(Color(1, 1, 1, 0.80))
+        c.setLineWidth(1.35)
+        c.arc(x + 4, y + 3, x + w - 4, y + h - 3, 105, 72)
+        c.setStrokeColor(Color(0.10, 0.14, 0.18, 0.24))
+        c.arc(x + 5, y + 4, x + w - 5, y + h - 4, 285, 55)
+    c.restoreState()
     if label:
         c.setFont("Courier-Bold", 8)
         c.setFillColor(HexColor("#F1F3F4") if smoked else NAVY)
         c.drawString(x + 16, y + h - 24, label)
+
+
+def material_marker(c, x, y, number, smoked=False):
+    c.setFillColor(HexColor("#F2F4F5") if smoked else NAVY)
+    c.circle(x, y, 8.5, fill=1, stroke=0)
+    c.setFont("Courier-Bold", 7)
+    c.setFillColor(NAVY if smoked else PAPER)
+    c.drawCentredString(x, y - 2.5, str(number))
+
+
+def material_key(c, x, y, number, text_value):
+    c.setFillColor(NAVY)
+    c.circle(x + 7, y + 3, 7, fill=1, stroke=0)
+    c.setFont("Courier-Bold", 6.5)
+    c.setFillColor(PAPER)
+    c.drawCentredString(x + 7, y + 0.7, str(number))
+    c.setFont("NotoSerifSC", 9.2)
+    c.setFillColor(INK)
+    c.drawString(x + 21, y, text_value)
 
 
 g = Guide(OUT)
@@ -376,12 +424,21 @@ g.end()
 g.begin("04 / Material and light")
 y = g.title("光学相同，透射方式可以完全不同。", 835, 35)
 g.body("透明与烟灰材质共用同一套折射坐标。区别在于背景透过多少、边缘吸收多少光，以及亮背景下要不要压低整圈白边。", M, y - 8, W - 2 * M, 11.5, 20)
-g.label("CLEAR", M, 688)
+g.c.setFont("Courier-Bold", 7.5)
+g.c.setFillColor(MUTED)
+g.c.drawCentredString(W / 2, 681, "SAME SOURCE TEXTURE  /  同一背景纹理")
 draw_glass_card(g.c, M, 508, 286, 146, smoked=False, label="CLEAR")
-g.body("高透射\n轻微色调\n方向性高光", M + 18, 480, 250, 9.6, 15, INK)
-g.label("SMOKED", 386, 688)
+material_marker(g.c, M + 183, 566, 1)
+material_marker(g.c, M + 40, 632, 2)
+material_key(g.c, M + 10, 480, 1, "背景细节保持清晰")
+material_key(g.c, M + 10, 457, 2, "只保留方向性高光")
 draw_glass_card(g.c, 386, 508, 286, 146, smoked=True, label="SMOKED")
-g.body("降低透射\n内侧吸光\n保留清透折射带", 404, 480, 250, 9.6, 15, INK)
+material_marker(g.c, 386 + 180, 566, 1, True)
+material_marker(g.c, 386 + 260, 580, 2, True)
+material_marker(g.c, 386 + 40, 632, 3, True)
+material_key(g.c, 396, 480, 1, "主体透射降低")
+material_key(g.c, 396, 457, 2, "内侧暗边吸光")
+material_key(g.c, 396, 434, 3, "边缘留下清透折射带")
 g.label("LUMINANCE ADAPTATION", M, 418)
 g.panel(M, 290, W - 2 * M, 104, Color(1, 1, 1, 0.62), 15)
 g.c.setFillColor(HexColor("#ECEDE9"))
