@@ -119,7 +119,7 @@ g.c.setStrokeColor(HexColor('#EAF0F2'));g.c.roundRect(470,430,202,160,25,fill=0,
 g.c.setFillColor(NAVY);g.c.setFont('Mono',7);g.c.drawString(470,405,'same background · local coordinates')
 code=['const rect = card.getBoundingClientRect();','const scale = Math.max(vw / iw, vh / ih);','const dx = (vw - iw*scale)/2 - rect.left;','const dy = (vh - ih*scale)/2 - rect.top;','ctx.drawImage(image, dx, dy, iw*scale, ih*scale);','gl.texImage2D(..., backdrop);']
 g.code(M,350,W-2*M,code,'actual sampling',13,7.6)
-g.body('关键限制：普通文字、视频与叠在玻璃后的任意 DOM 不会自动进入纹理；多层玻璃也不是递归折射。Cove Home 使用统一的自托管背景源来保证坐标一致。',M,114,W-2*M,9.5,16,MUTED)
+g.body('关键限制：普通文字、视频与叠在玻璃后的任意 DOM 不会自动进入纹理；多层玻璃也不是递归折射。原始移动端界面使用统一的自托管背景源来保证坐标一致。',M,114,W-2*M,9.5,16,MUTED)
 g.end()
 
 # 3
