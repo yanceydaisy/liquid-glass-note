@@ -1,8 +1,8 @@
 # Layered Liquid Glass Notes
 
-![Light and dark states of the original liquid-glass interface](assets/light-dark-interface.jpeg)
+![Clear and smoked liquid glass rendered over the same cathedral background](assets/material-browser-capture.jpeg)
 
-*Light and dark states from the original interface.*
+*The production v5 optical engine rendering clear and smoked presets over the same cathedral crop.*
 
 A compact technical note for a full-surface liquid-glass material developed through repeated production UI iterations with CSS, Canvas 2D, WebGL and GLSL.
 
